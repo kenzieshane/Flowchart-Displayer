@@ -160,6 +160,80 @@
             letter-spacing: 0.2px;
         }
 
+        .style-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            width: 100%;
+        }
+
+        .style-swatch {
+            border: 1px solid #c8c6c4;
+            border-radius: 6px;
+            padding: 8px;
+            background: #fff;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .style-swatch.active {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(15, 108, 189, 0.15);
+        }
+
+        .style-swatch .swatch-palette {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+
+        .swatch-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .swatch-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .swatch-note {
+            display: block;
+            margin-top: 2px;
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        details.legacy-options {
+            width: 100%;
+            border: 1px dashed #c8c6c4;
+            border-radius: 6px;
+            padding: 8px 10px;
+            background: #fcfcfc;
+        }
+
+        details.legacy-options > summary {
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            list-style: none;
+        }
+
+        details.legacy-options > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .legacy-panel {
+            margin-top: 10px;
+            display: grid;
+            gap: 10px;
+        }
+
         .cmd-btn {
             border: 1px solid #c8c6c4;
             background: linear-gradient(180deg, #ffffff 0%, #f3f2f1 100%);
@@ -444,6 +518,13 @@
 
             <section class="ribbon-panel" id="tab-design" role="tabpanel">
                 <div class="ribbon-group">
+                    <div class="ribbon-group-content">
+                        <div class="style-grid" id="flowchartStyleGrid"></div>
+                    </div>
+                    <div class="ribbon-group-title">Flowchart Styles</div>
+                </div>
+
+                <div class="ribbon-group">
                     <div class="ribbon-group-content mini-stack">
                         <select id="themeSelect" onchange="updateTheme()">
                             <option value="default">Default</option>
@@ -456,20 +537,28 @@
                 </div>
 
                 <div class="ribbon-group">
-                    <div class="ribbon-group-content mini-stack">
-                        <input type="color" id="primaryColor" class="color-input" value="#0f6cbd" onchange="applyCustomColors()" title="Primary">
-                        <input type="color" id="secondaryColor" class="color-input" value="#115ea3" onchange="applyCustomColors()" title="Secondary">
-                        <input type="color" id="accentColor" class="color-input" value="#0f9d58" onchange="applyCustomColors()" title="Accent">
-                    </div>
-                    <div class="ribbon-group-title">Brand Colors</div>
-                </div>
-
-                <div class="ribbon-group">
                     <div class="ribbon-group-content">
                         <button class="cmd-btn" onclick="generateRandomColors()">Random</button>
                         <button class="cmd-btn" onclick="resetColors()">Reset</button>
                     </div>
                     <div class="ribbon-group-title">Palette</div>
+                </div>
+
+                <div class="ribbon-group" style="min-width: 280px;">
+                    <div class="ribbon-group-content">
+                        <details class="legacy-options" id="legacyOptions">
+                            <summary>Legacy Options</summary>
+                            <div class="legacy-panel">
+                                <div class="mini-stack">
+                                    <input type="color" id="primaryColor" class="color-input" value="#0f6cbd" onchange="applyCustomColors()" title="Primary">
+                                    <input type="color" id="secondaryColor" class="color-input" value="#115ea3" onchange="applyCustomColors()" title="Secondary">
+                                    <input type="color" id="accentColor" class="color-input" value="#0f9d58" onchange="applyCustomColors()" title="Accent">
+                                </div>
+                                <span style="font-size: 11px; color: var(--muted);">Manual brand color overrides</span>
+                            </div>
+                        </details>
+                    </div>
+                    <div class="ribbon-group-title">Advanced</div>
                 </div>
             </section>
         </div>
@@ -514,12 +603,74 @@
         });
 
         let currentZoom = 1;
+        let currentFlowchartStyle = 'corporate';
+        let usingLegacyColors = false;
+        let legacyColors = {
+            primaryColor: '#0f6cbd',
+            secondaryColor: '#115ea3',
+            accentColor: '#0f9d58'
+        };
 
         // Store default colors
         const defaultColors = {
             primaryColor: '#0f6cbd',
             secondaryColor: '#115ea3',
             accentColor: '#0f9d58'
+        };
+
+        const flowchartStyles = {
+            corporate: {
+                label: 'Corporate Blue',
+                note: 'Clean office default',
+                colors: ['#0f6cbd', '#115ea3', '#dbe9f7'],
+                theme: {
+                    primaryColor: '#0f6cbd',
+                    primaryTextColor: '#1f1f1f',
+                    primaryBorderColor: '#115ea3',
+                    secondaryColor: '#115ea3',
+                    tertiaryColor: '#dbe9f7',
+                    lineColor: '#8ca8c8'
+                }
+            },
+            emerald: {
+                label: 'Emerald',
+                note: 'Fresh and calm',
+                colors: ['#0f9d58', '#087443', '#dff2e7'],
+                theme: {
+                    primaryColor: '#0f9d58',
+                    primaryTextColor: '#1f1f1f',
+                    primaryBorderColor: '#087443',
+                    secondaryColor: '#087443',
+                    tertiaryColor: '#dff2e7',
+                    lineColor: '#82b99d'
+                }
+            },
+            graphite: {
+                label: 'Graphite',
+                note: 'Minimal and neutral',
+                colors: ['#4a5568', '#2d3748', '#edf2f7'],
+                theme: {
+                    primaryColor: '#4a5568',
+                    primaryTextColor: '#1f1f1f',
+                    primaryBorderColor: '#2d3748',
+                    secondaryColor: '#2d3748',
+                    tertiaryColor: '#edf2f7',
+                    lineColor: '#9ca3af'
+                }
+            },
+            warm: {
+                label: 'Warm Accent',
+                note: 'High contrast',
+                colors: ['#c55d2f', '#9f3f20', '#fce7dc'],
+                theme: {
+                    primaryColor: '#c55d2f',
+                    primaryTextColor: '#1f1f1f',
+                    primaryBorderColor: '#9f3f20',
+                    secondaryColor: '#9f3f20',
+                    tertiaryColor: '#fce7dc',
+                    lineColor: '#d6a48f'
+                }
+            }
         };
 
         // Color utilities
@@ -536,6 +687,112 @@
             return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
         }
 
+        function getMermaidThemeVariables() {
+            if (usingLegacyColors) {
+                return {
+                    primaryColor: legacyColors.primaryColor,
+                    primaryTextColor: '#1f1f1f',
+                    primaryBorderColor: legacyColors.accentColor,
+                    secondaryColor: legacyColors.secondaryColor,
+                    tertiaryColor: '#eef6fd',
+                    lineColor: legacyColors.secondaryColor,
+                    background: '#ffffff',
+                    mainBkg: '#ffffff',
+                    nodeBorder: legacyColors.accentColor,
+                    clusterBkg: '#f8f9fb',
+                    clusterBorder: '#d9dfe8',
+                    fontFamily: 'Segoe UI, Tahoma, sans-serif'
+                };
+            }
+
+            const style = flowchartStyles[currentFlowchartStyle] || flowchartStyles.corporate;
+            return {
+                primaryColor: style.theme.primaryColor,
+                primaryTextColor: style.theme.primaryTextColor,
+                primaryBorderColor: style.theme.primaryBorderColor,
+                secondaryColor: style.theme.secondaryColor,
+                tertiaryColor: style.theme.tertiaryColor,
+                lineColor: style.theme.lineColor,
+                background: '#ffffff',
+                mainBkg: '#ffffff',
+                nodeBorder: style.theme.primaryBorderColor,
+                clusterBkg: '#f8f9fb',
+                clusterBorder: '#d9dfe8',
+                fontFamily: 'Segoe UI, Tahoma, sans-serif'
+            };
+        }
+
+        function initializeMermaid() {
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: document.getElementById('themeSelect').value,
+                securityLevel: 'loose',
+                themeVariables: getMermaidThemeVariables(),
+                flowchart: {
+                    useMaxWidth: true,
+                    htmlLabels: true,
+                    curve: 'basis',
+                    padding: 20
+                },
+                fontFamily: 'Segoe UI, Tahoma, sans-serif'
+            });
+        }
+
+        function renderFlowchartStyles() {
+            const grid = document.getElementById('flowchartStyleGrid');
+            grid.innerHTML = '';
+
+            Object.entries(flowchartStyles).forEach(([key, style]) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `style-swatch${key === currentFlowchartStyle ? ' active' : ''}`;
+                button.dataset.style = key;
+                button.innerHTML = `
+                    <span class="swatch-palette">
+                        <span class="swatch-dot" style="background:${style.colors[0]}"></span>
+                        <span class="swatch-dot" style="background:${style.colors[1]}"></span>
+                        <span class="swatch-dot" style="background:${style.colors[2]}"></span>
+                    </span>
+                    <span class="swatch-label">${style.label}</span>
+                    <span class="swatch-note">${style.note}</span>
+                `;
+                button.addEventListener('click', () => applyFlowchartStyle(key));
+                grid.appendChild(button);
+            });
+        }
+
+        function applyFlowchartStyle(styleKey) {
+            const style = flowchartStyles[styleKey];
+            if (!style) {
+                return;
+            }
+
+            currentFlowchartStyle = styleKey;
+            usingLegacyColors = false;
+            document.documentElement.style.setProperty('--accent-primary', style.theme.primaryColor);
+            document.documentElement.style.setProperty('--accent-secondary', style.theme.secondaryColor);
+            document.documentElement.style.setProperty('--accent-highlight', style.theme.primaryBorderColor);
+
+            const primaryColorInput = document.getElementById('primaryColor');
+            const secondaryColorInput = document.getElementById('secondaryColor');
+            const accentColorInput = document.getElementById('accentColor');
+
+            if (primaryColorInput) {
+                primaryColorInput.value = style.theme.primaryColor;
+            }
+            if (secondaryColorInput) {
+                secondaryColorInput.value = style.theme.secondaryColor;
+            }
+            if (accentColorInput) {
+                accentColorInput.value = style.theme.primaryBorderColor;
+            }
+
+            renderFlowchartStyles();
+            initializeMermaid();
+            refreshDiagram();
+            showStatus(`${style.label} style applied`, 'success');
+        }
+
         function generateRandomColors() {
             const colors = [
                 { primary: generateRandomColor(), secondary: generateRandomColor(), accent: generateRandomColor() },
@@ -548,6 +805,9 @@
             document.getElementById('primaryColor').value = randomSet.primary;
             document.getElementById('secondaryColor').value = randomSet.secondary;
             document.getElementById('accentColor').value = randomSet.accent;
+
+            currentFlowchartStyle = 'corporate';
+            usingLegacyColors = true;
             
             applyCustomColors();
                 showStatus('Random colors applied', 'success');
@@ -557,6 +817,8 @@
             document.getElementById('primaryColor').value = defaultColors.primaryColor;
             document.getElementById('secondaryColor').value = defaultColors.secondaryColor;
             document.getElementById('accentColor').value = defaultColors.accentColor;
+            currentFlowchartStyle = 'corporate';
+            usingLegacyColors = true;
             
             applyCustomColors();
             showStatus('Colors reset to default', 'success');
@@ -566,6 +828,12 @@
             const primary = document.getElementById('primaryColor').value;
             const secondary = document.getElementById('secondaryColor').value;
             const accent = document.getElementById('accentColor').value;
+            usingLegacyColors = true;
+            legacyColors = {
+                primaryColor: primary,
+                secondaryColor: secondary,
+                accentColor: accent
+            };
             
             // Create CSS variables for custom colors
             const root = document.documentElement;
@@ -574,28 +842,19 @@
             root.style.setProperty('--accent-highlight', accent);
             
             // Refresh diagram to apply new colors
+            initializeMermaid();
             refreshDiagram();
         }
 
         function updateTheme() {
-            const theme = document.getElementById('themeSelect').value;
-            mermaid.initialize({
-                startOnLoad: false,
-                theme: theme,
-                securityLevel: 'loose',
-                flowchart: {
-                    useMaxWidth: true,
-                    htmlLabels: true,
-                    curve: 'basis',
-                    padding: 20
-                },
-                fontFamily: 'Arial, sans-serif'
-            });
+            initializeMermaid();
             refreshDiagram();
         }
 
         // Load default diagram
         document.getElementById('mermaidCode').value = defaultFlowchart;
+        renderFlowchartStyles();
+        initializeMermaid();
         
         function renderDiagram(code) {
             const diagramElement = document.getElementById('diagram');
