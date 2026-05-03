@@ -167,6 +167,60 @@
             width: 100%;
         }
 
+        .theme-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            width: 100%;
+        }
+
+        .theme-swatch {
+            border: 1px solid #c8c6c4;
+            border-radius: 6px;
+            padding: 8px;
+            cursor: pointer;
+            text-align: left;
+            min-height: 74px;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .theme-swatch.active {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 2px rgba(15, 108, 189, 0.15);
+        }
+
+        .theme-swatch .theme-label {
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .theme-swatch .theme-note {
+            font-size: 11px;
+            opacity: 0.9;
+        }
+
+        .theme-swatch.default {
+            background: linear-gradient(135deg, #ffffff 0%, #eef3f8 100%);
+            color: #201f1e;
+        }
+
+        .theme-swatch.dark {
+            background: linear-gradient(135deg, #1f1f1f 0%, #434343 100%);
+        }
+
+        .theme-swatch.forest {
+            background: linear-gradient(135deg, #1f4d36 0%, #4f7c5d 100%);
+        }
+
+        .theme-swatch.neutral {
+            background: linear-gradient(135deg, #f6f5f4 0%, #d9d8d6 100%);
+            color: #201f1e;
+        }
+
         .style-swatch {
             border: 1px solid #c8c6c4;
             border-radius: 6px;
@@ -525,15 +579,10 @@
                 </div>
 
                 <div class="ribbon-group">
-                    <div class="ribbon-group-content mini-stack">
-                        <select id="themeSelect" onchange="updateTheme()">
-                            <option value="default">Default</option>
-                            <option value="dark">Dark</option>
-                            <option value="forest">Forest</option>
-                            <option value="neutral">Neutral</option>
-                        </select>
+                    <div class="ribbon-group-content">
+                        <div class="theme-grid" id="diagramThemeGrid"></div>
                     </div>
-                    <div class="ribbon-group-title">Theme</div>
+                    <div class="ribbon-group-title">Diagram Themes</div>
                 </div>
 
                 <div class="ribbon-group">
@@ -549,6 +598,15 @@
                         <details class="legacy-options" id="legacyOptions">
                             <summary>Legacy Options</summary>
                             <div class="legacy-panel">
+                                <div class="mini-stack">
+                                    <select id="themeSelect" onchange="updateTheme()">
+                                        <option value="default">Default</option>
+                                        <option value="dark">Dark</option>
+                                        <option value="forest">Forest</option>
+                                        <option value="neutral">Neutral</option>
+                                    </select>
+                                </div>
+                                <span style="font-size: 11px; color: var(--muted);">Legacy Mermaid theme dropdown</span>
                                 <div class="mini-stack">
                                     <input type="color" id="primaryColor" class="color-input" value="#0f6cbd" onchange="applyCustomColors()" title="Primary">
                                     <input type="color" id="secondaryColor" class="color-input" value="#115ea3" onchange="applyCustomColors()" title="Secondary">
@@ -673,6 +731,33 @@
             }
         };
 
+        const diagramThemes = {
+            default: {
+                label: 'Default',
+                note: 'Bright office canvas',
+                className: 'default',
+                preview: ['#ffffff', '#eaf3fc']
+            },
+            dark: {
+                label: 'Dark',
+                note: 'High contrast canvas',
+                className: 'dark',
+                preview: ['#1f1f1f', '#434343']
+            },
+            forest: {
+                label: 'Forest',
+                note: 'Muted green canvas',
+                className: 'forest',
+                preview: ['#1f4d36', '#4f7c5d']
+            },
+            neutral: {
+                label: 'Neutral',
+                note: 'Soft grayscale canvas',
+                className: 'neutral',
+                preview: ['#f6f5f4', '#d9d8d6']
+            }
+        };
+
         // Color utilities
         function hexToRgb(hex) {
             const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -736,6 +821,37 @@
                 },
                 fontFamily: 'Segoe UI, Tahoma, sans-serif'
             });
+        }
+
+        function renderDiagramThemes() {
+            const grid = document.getElementById('diagramThemeGrid');
+            grid.innerHTML = '';
+
+            Object.entries(diagramThemes).forEach(([key, theme]) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = `theme-swatch ${theme.className}${document.getElementById('themeSelect').value === key ? ' active' : ''}`;
+                button.dataset.theme = key;
+                button.innerHTML = `
+                    <span class="theme-label">${theme.label}</span>
+                    <span class="theme-note">${theme.note}</span>
+                `;
+                button.addEventListener('click', () => applyDiagramTheme(key));
+                grid.appendChild(button);
+            });
+        }
+
+        function applyDiagramTheme(themeKey) {
+            const themeSelect = document.getElementById('themeSelect');
+            if (!diagramThemes[themeKey] || !themeSelect) {
+                return;
+            }
+
+            themeSelect.value = themeKey;
+            initializeMermaid();
+            renderDiagramThemes();
+            refreshDiagram();
+            showStatus(`${diagramThemes[themeKey].label} theme applied`, 'success');
         }
 
         function renderFlowchartStyles() {
@@ -848,12 +964,14 @@
 
         function updateTheme() {
             initializeMermaid();
+            renderDiagramThemes();
             refreshDiagram();
         }
 
         // Load default diagram
         document.getElementById('mermaidCode').value = defaultFlowchart;
         renderFlowchartStyles();
+        renderDiagramThemes();
         initializeMermaid();
         
         function renderDiagram(code) {

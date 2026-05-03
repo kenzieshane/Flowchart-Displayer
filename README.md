@@ -7,6 +7,7 @@ A single-page Mermaid flowchart editor with an Office-style ribbon UI, live prev
 - Ribbon-style interface with Home, View, and Design tabs
 - Live Mermaid diagram preview
 - Office-like flowchart color style presets
+- Visible diagram theme swatches for Default, Dark, Forest, and Neutral
 - Legacy custom brand color controls tucked into a collapsed options menu
 - Zoom in, zoom out, and reset controls
 - Diagram title editing
@@ -32,10 +33,20 @@ The Design tab includes preset flowchart styles displayed as swatches:
 
 These presets control the diagram theme and are intended to be the main styling option.
 
+The Design tab also includes diagram theme swatches for the Mermaid canvas/background:
+
+- Default
+- Dark
+- Forest
+- Neutral
+
+These are shown as visual tiles so the theme changes are easier to preview.
+
 ## Legacy Options
 
 The custom color pickers are still available, but they are hidden under Legacy Options.
 Use them only if you want manual color overrides instead of the preset styles.
+The Mermaid theme dropdown is also tucked into Legacy Options for manual selection.
 
 ## Files
 
