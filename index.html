@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMKN1 Flowchart Displayer</title>
+    <!-- Mermaid.js -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <!-- html2pdf.js for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" integrity="sha512-GsLlZN/3F2ErC5ifS5QtgpiJtWd43JWSuIgh7mbzZ8zBps+dvLusV+eNQATqgA/HdeKFVgA5v3S/cIrLF7QnIg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <style>
+        :root {
+            --accent-primary: #0f6cbd;
+            --accent-secondary: #115ea3;
+            --accent-highlight: #0f9d58;
+            --surface: #f3f2f1;
+            --panel: #ffffff;
+            --line: #d1d1d1;
+            --text: #323130;
+            --muted: #605e5c;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Segoe UI Variable", "Segoe UI", Tahoma, sans-serif;
+            background: linear-gradient(180deg, #f8f7f6 0%, #eeecea 100%);
+            min-height: 100vh;
+            color: var(--text);
+        }
+
+        .titlebar {
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            color: #fff;
+            padding: 10px 18px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .title-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .file-badge {
+            font-size: 11px;
+            letter-spacing: 0.2px;
+            text-transform: uppercase;
+            padding: 4px 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+        }
+
+        .titlebar h1 {
+            font-size: 15px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .title-right {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .ribbon-shell {
+            background: var(--panel);
+            border-bottom: 1px solid var(--line);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        }
+
+        .ribbon-tabs {
+            max-width: 1500px;
+            margin: 0 auto;
+            display: flex;
+            gap: 4px;
+            padding: 6px 12px 0;
+        }
+
+        .ribbon-tab {
+            background: transparent;
+            border: 1px solid transparent;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--muted);
+            cursor: pointer;
+        }
+
+        .ribbon-tab:hover {
+            background: #f5f4f3;
+            color: var(--text);
+        }
+
+        .ribbon-tab.active {
+            color: var(--accent-primary);
+            background: #fff;
+            border-color: var(--line);
+        }
+
+        .ribbon-panels {
+            max-width: 1500px;
+            margin: 0 auto;
+            border-top: 1px solid var(--line);
+            padding: 10px 12px 12px;
+        }
+
+        .ribbon-panel {
+            display: none;
+            gap: 10px;
+            align-items: stretch;
+            flex-wrap: wrap;
+        }
+
+        .ribbon-panel.active {
+            display: flex;
+        }
+
+        .ribbon-group {
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: #fff;
+            min-height: 84px;
+            padding: 8px;
+            display: grid;
+            grid-template-rows: 1fr auto;
+            min-width: 180px;
+        }
+
+        .ribbon-group-content {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .ribbon-group-title {
+            text-align: center;
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 8px;
+            border-top: 1px solid #ecebea;
+            padding-top: 4px;
+            letter-spacing: 0.2px;
+        }
+
+        .cmd-btn {
+            border: 1px solid #c8c6c4;
+            background: linear-gradient(180deg, #ffffff 0%, #f3f2f1 100%);
+            border-radius: 4px;
+            padding: 8px 10px;
+            font-size: 12px;
+            color: var(--text);
+            cursor: pointer;
+            min-width: 78px;
+        }
+
+        .cmd-btn:hover {
+            border-color: var(--accent-primary);
+            background: #eaf3fc;
+        }
+
+        .cmd-btn.primary {
+            background: linear-gradient(180deg, #1f8ad6 0%, var(--accent-primary) 100%);
+            border-color: #0d5ea4;
+            color: #fff;
+        }
+
+        .cmd-btn.primary:hover {
+            background: linear-gradient(180deg, #2a95df 0%, #0d5ea4 100%);
+        }
+
+        .mini-stack {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .mini-stack input,
+        .mini-stack select {
+            border: 1px solid #c8c6c4;
+            border-radius: 4px;
+            padding: 7px 8px;
+            font-size: 12px;
+            min-width: 120px;
+            background: #fff;
+        }
+
+        .mini-stack input:focus,
+        .mini-stack select:focus {
+            outline: 2px solid rgba(15, 108, 189, 0.2);
+            border-color: var(--accent-primary);
+        }
+
+        .color-input {
+            width: 40px;
+            height: 34px;
+            padding: 2px;
+            border: 1px solid #c8c6c4;
+            border-radius: 4px;
+            background: #fff;
+            cursor: pointer;
+        }
+
+        .workspace {
+            max-width: 1500px;
+            margin: 18px auto;
+            padding: 0 12px 18px;
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        .editor-section,
+        .diagram-container {
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        .editor-section {
+            padding: 14px;
+            position: sticky;
+            top: 132px;
+        }
+
+        .editor-section h3 {
+            margin-bottom: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 420px;
+            padding: 12px;
+            border: 1px solid #c8c6c4;
+            border-radius: 6px;
+            font-family: Consolas, "Cascadia Mono", monospace;
+            font-size: 12px;
+            line-height: 1.5;
+            resize: vertical;
+            background: #fbfbfb;
+        }
+
+        textarea:focus {
+            outline: 2px solid rgba(15, 108, 189, 0.2);
+            border-color: var(--accent-primary);
+            background: #fff;
+        }
+
+        .diagram-container {
+            padding: 22px;
+            overflow: auto;
+        }
+
+        #diagramTitleDisplay {
+            margin-bottom: 16px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: 600;
+            color: #201f1e;
+        }
+
+        #diagram {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 460px;
+            transform-origin: center top;
+        }
+
+        #diagram svg {
+            display: block;
+            transition: transform 0.2s ease;
+        }
+
+        .status {
+            max-width: 1500px;
+            margin: 0 auto 16px;
+            padding: 8px 14px;
+            border-radius: 4px;
+            font-size: 12px;
+            width: calc(100% - 24px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+        }
+
+        .status.success,
+        .status.error {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .status.success {
+            background: #edf7ed;
+            color: #107c10;
+            border: 1px solid #107c10;
+        }
+
+        .status.error {
+            background: #fdf3f4;
+            color: #a4262c;
+            border: 1px solid #d13438;
+        }
+
+        @media (max-width: 1100px) {
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+
+            .editor-section {
+                position: static;
+            }
+
+            textarea {
+                min-height: 260px;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .title-right {
+                display: none;
+            }
+
+            .ribbon-tabs {
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            .ribbon-panel {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                padding-bottom: 4px;
+            }
+
+            .ribbon-group {
+                min-width: 220px;
+            }
+        }
+
+        @media print {
+            body {
+                background: #fff;
+            }
+
+            .titlebar,
+            .ribbon-shell,
+            .editor-section,
+            .status,
+            .no-print {
+                display: none !important;
+            }
+
+            .workspace {
+                display: block;
+                margin: 0;
+                padding: 0;
+            }
+
+            .diagram-container {
+                border: 0;
+                box-shadow: none;
+                padding: 0;
+            }
+
+            #diagram {
+                min-height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="titlebar">
+        <div class="title-left">
+            <span class="file-badge">Flowchart</span>
+            <h1>SMKN1 Flowchart Displayer</h1>
+        </div>
+        <div class="title-right">Ribbon Workspace</div>
+    </header>
+
+    <div class="ribbon-shell no-print">
+        <div class="ribbon-tabs" role="tablist" aria-label="Ribbon Tabs">
+            <button class="ribbon-tab active" data-tab="home" role="tab" aria-selected="true">Home</button>
+            <button class="ribbon-tab" data-tab="view" role="tab" aria-selected="false">View</button>
+            <button class="ribbon-tab" data-tab="design" role="tab" aria-selected="false">Design</button>
+        </div>
+
+        <div class="ribbon-panels">
+            <section class="ribbon-panel active" id="tab-home" role="tabpanel">
+                <div class="ribbon-group">
+                    <div class="ribbon-group-content">
+                        <button class="cmd-btn primary" onclick="exportToPDF()">Export PDF</button>
+                        <button class="cmd-btn" onclick="refreshDiagram()">Refresh</button>
+                    </div>
+                    <div class="ribbon-group-title">Document</div>
+                </div>
+
+                <div class="ribbon-group">
+                    <div class="ribbon-group-content mini-stack">
+                        <input type="text" id="diagramTitle" value="Flowchart Diagram" placeholder="Diagram title">
+                    </div>
+                    <div class="ribbon-group-title">Title</div>
+                </div>
+            </section>
+
+            <section class="ribbon-panel" id="tab-view" role="tabpanel">
+                <div class="ribbon-group">
+                    <div class="ribbon-group-content">
+                        <button class="cmd-btn" onclick="zoomIn()">Zoom In</button>
+                        <button class="cmd-btn" onclick="zoomOut()">Zoom Out</button>
+                        <button class="cmd-btn" onclick="resetZoom()">Reset</button>
+                    </div>
+                    <div class="ribbon-group-title">Zoom Controls</div>
+                </div>
+
+                <div class="ribbon-group">
+                    <div class="ribbon-group-content mini-stack">
+                        <span>Current: <strong id="zoomLevel">100%</strong></span>
+                    </div>
+                    <div class="ribbon-group-title">Zoom Level</div>
+                </div>
+            </section>
+
+            <section class="ribbon-panel" id="tab-design" role="tabpanel">
+                <div class="ribbon-group">
+                    <div class="ribbon-group-content mini-stack">
+                        <select id="themeSelect" onchange="updateTheme()">
+                            <option value="default">Default</option>
+                            <option value="dark">Dark</option>
+                            <option value="forest">Forest</option>
+                            <option value="neutral">Neutral</option>
+                        </select>
+                    </div>
+                    <div class="ribbon-group-title">Theme</div>
+                </div>
+
+                <div class="ribbon-group">
+                    <div class="ribbon-group-content mini-stack">
+                        <input type="color" id="primaryColor" class="color-input" value="#0f6cbd" onchange="applyCustomColors()" title="Primary">
+                        <input type="color" id="secondaryColor" class="color-input" value="#115ea3" onchange="applyCustomColors()" title="Secondary">
+                        <input type="color" id="accentColor" class="color-input" value="#0f9d58" onchange="applyCustomColors()" title="Accent">
+                    </div>
+                    <div class="ribbon-group-title">Brand Colors</div>
+                </div>
+
+                <div class="ribbon-group">
+                    <div class="ribbon-group-content">
+                        <button class="cmd-btn" onclick="generateRandomColors()">Random</button>
+                        <button class="cmd-btn" onclick="resetColors()">Reset</button>
+                    </div>
+                    <div class="ribbon-group-title">Palette</div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <main class="workspace">
+        <section class="editor-section no-print">
+            <h3>Mermaid Code</h3>
+            <textarea id="mermaidCode" rows="10" placeholder="Enter your Mermaid diagram code here..."></textarea>
+        </section>
+
+        <section class="diagram-container" id="pdfExport">
+            <h3 id="diagramTitleDisplay">Flowchart Diagram</h3>
+            <div id="diagram"></div>
+        </section>
+    </main>
+
+    <div id="status" class="status"></div>
+
+    <script>
+        // Your original flowchart code
+        const defaultFlowchart = `flowchart LR
+    Start([Start]) --> Process[Process Request]
+    Process --> Decision{Decision Point}
+    Decision -- Yes --> Action1[Execute Action]
+    Decision -- No --> Action2[Alternative Path]
+    Action1 --> End([End])
+    Action2 --> End`;
+
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis',
+                padding: 20
+            },
+            fontFamily: 'Arial, sans-serif'
+        });
+
+        let currentZoom = 1;
+
+        // Store default colors
+        const defaultColors = {
+            primaryColor: '#0f6cbd',
+            secondaryColor: '#115ea3',
+            accentColor: '#0f9d58'
+        };
+
+        // Color utilities
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        function generateRandomColor() {
+            return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+        }
+
+        function generateRandomColors() {
+            const colors = [
+                { primary: generateRandomColor(), secondary: generateRandomColor(), accent: generateRandomColor() },
+                { primary: generateRandomColor(), secondary: generateRandomColor(), accent: generateRandomColor() },
+                { primary: generateRandomColor(), secondary: generateRandomColor(), accent: generateRandomColor() }
+            ];
+            
+            const randomSet = colors[Math.floor(Math.random() * colors.length)];
+            
+            document.getElementById('primaryColor').value = randomSet.primary;
+            document.getElementById('secondaryColor').value = randomSet.secondary;
+            document.getElementById('accentColor').value = randomSet.accent;
+            
+            applyCustomColors();
+                showStatus('Random colors applied', 'success');
+        }
+
+        function resetColors() {
+            document.getElementById('primaryColor').value = defaultColors.primaryColor;
+            document.getElementById('secondaryColor').value = defaultColors.secondaryColor;
+            document.getElementById('accentColor').value = defaultColors.accentColor;
+            
+            applyCustomColors();
+            showStatus('Colors reset to default', 'success');
+        }
+
+        function applyCustomColors() {
+            const primary = document.getElementById('primaryColor').value;
+            const secondary = document.getElementById('secondaryColor').value;
+            const accent = document.getElementById('accentColor').value;
+            
+            // Create CSS variables for custom colors
+            const root = document.documentElement;
+            root.style.setProperty('--accent-primary', primary);
+            root.style.setProperty('--accent-secondary', secondary);
+            root.style.setProperty('--accent-highlight', accent);
+            
+            // Refresh diagram to apply new colors
+            refreshDiagram();
+        }
+
+        function updateTheme() {
+            const theme = document.getElementById('themeSelect').value;
+            mermaid.initialize({
+                startOnLoad: false,
+                theme: theme,
+                securityLevel: 'loose',
+                flowchart: {
+                    useMaxWidth: true,
+                    htmlLabels: true,
+                    curve: 'basis',
+                    padding: 20
+                },
+                fontFamily: 'Arial, sans-serif'
+            });
+            refreshDiagram();
+        }
+
+        // Load default diagram
+        document.getElementById('mermaidCode').value = defaultFlowchart;
+        
+        function renderDiagram(code) {
+            const diagramElement = document.getElementById('diagram');
+            diagramElement.innerHTML = '';
+            
+            try {
+                // Create a div with mermaid class for Mermaid to process
+                const tempDiv = document.createElement('div');
+                tempDiv.className = 'mermaid';
+                tempDiv.textContent = code;
+                diagramElement.appendChild(tempDiv);
+                
+        // Use mermaid.run() to render all mermaid diagrams
+                mermaid.run().then(() => {
+                    // Apply current zoom to the rendered SVG
+                    setTimeout(() => {
+                        applyZoom();
+                    }, 100);
+                        showStatus('Diagram rendered successfully', 'success');
+                }).catch(error => {
+                        showStatus('Error: ' + error.message, 'error');
+                    diagramElement.innerHTML = `<div style="color: red; padding: 20px;">Error: ${error.message}</div>`;
+                });
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            setTimeout(() => {
+                if (statusDiv.className.includes(type)) {
+                    statusDiv.style.opacity = '0';
+                    setTimeout(() => {
+                        statusDiv.textContent = '';
+                        statusDiv.className = 'status';
+                        statusDiv.style.opacity = '1';
+                    }, 500);
+                }
+            }, 3000);
+        }
+
+        function refreshDiagram() {
+            const code = document.getElementById('mermaidCode').value;
+            if (code.trim()) {
+                renderDiagram(code);
+            } else {
+                showStatus('Please enter Mermaid diagram code', 'error');
+            }
+        }
+
+        function exportToPDF() {
+            // Use browser's native print functionality which works better with SVGs
+            window.print();
+        }
+
+        function zoomIn() {
+            currentZoom = Math.min(currentZoom + 0.1, 5);
+            applyZoom();
+            updateZoomDisplay();
+        }
+
+        function zoomOut() {
+            currentZoom = Math.max(currentZoom - 0.1, 0.5);
+            applyZoom();
+            updateZoomDisplay();
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            applyZoom();
+            updateZoomDisplay();
+        }
+
+        function updateZoomDisplay() {
+            document.getElementById('zoomLevel').textContent = Math.round(currentZoom * 100) + '%';
+        }
+
+        function applyZoom() {
+            const svg = document.querySelector('#diagram svg');
+            if (svg) {
+                svg.style.transform = `scale(${currentZoom})`;
+                svg.style.transformOrigin = 'top center';
+            }
+        }
+
+        function setupRibbonTabs() {
+            const tabs = document.querySelectorAll('.ribbon-tab');
+            const panels = document.querySelectorAll('.ribbon-panel');
+
+            tabs.forEach((tab) => {
+                tab.addEventListener('click', () => {
+                    const target = tab.getAttribute('data-tab');
+
+                    tabs.forEach((item) => {
+                        item.classList.remove('active');
+                        item.setAttribute('aria-selected', 'false');
+                    });
+
+                    panels.forEach((panel) => panel.classList.remove('active'));
+
+                    tab.classList.add('active');
+                    tab.setAttribute('aria-selected', 'true');
+
+                    const activePanel = document.getElementById(`tab-${target}`);
+                    if (activePanel) {
+                        activePanel.classList.add('active');
+                    }
+                });
+            });
+        }
+
+        // Live preview on input (debounced)
+        let debounceTimer;
+        document.getElementById('mermaidCode').addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                refreshDiagram();
+            }, 500);
+        });
+
+        // Update diagram title
+        document.getElementById('diagramTitle').addEventListener('input', function() {
+            document.getElementById('diagramTitleDisplay').textContent = this.value;
+        });
+
+        // Initial render
+        renderDiagram(defaultFlowchart);
+        updateZoomDisplay();
+        setupRibbonTabs();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            applyZoom();
+        });
+    </script>
+</body>
+</html>
